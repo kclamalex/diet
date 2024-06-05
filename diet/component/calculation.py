@@ -1,3 +1,4 @@
+import typing as t
 from itertools import product
 from math import ceil
 import random
@@ -5,9 +6,10 @@ import random
 import numpy as np
 from scipy.optimize import nnls
 
+from crud import models
 
-def unique_choice(elements: list, k: int) -> list:
-    choices = []
+def unique_choice(elements: list[t.Any], k: int) -> list:
+    choices: list[t.Any] = []
     selected = []
     while len(choices) < k:
         idx = random.randint(0, len(elements) - 1)
@@ -25,11 +27,13 @@ def pick_k_unique_food_combinations(proteins: list, carbs: list,
 
 def get_meal_portion_per_day_in_gram(
         food_list: list[models.Food],
-        consumption: models.Consumption) -> dict[str:int]:
+        consumption_list: list[models.Consumption]) -> dict[str,int]:
 
     foods_matrix = np.array([f.get_nutrition_info_tuple() for f in food_list])
 
-    consumption_matrix = np.array(consumption.get_nutrition_info_tuple())
+    consumption_matrix = np.array(consumption_list[0].get_nutrition_info_tuple())
+    for consumption in consumption_list[1:]:
+        consumption_matrix += np.array(consumption.get_nutrition_info_tuple())
 
     foods_transposed_matrix = np.vstack([foods_matrix]).T
 
