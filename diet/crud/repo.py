@@ -39,7 +39,7 @@ class ConsumptionRepo(NutritionRepo):
 class FoodYamlRepo:
 
     def __init__(self, data_folder_path: str):
-        self.data_folder_path = data_folder_path
+        self.data_folder_path = data_folder_path + "/food"
 
     def _get_yaml_files(self) -> list[Path]:
         data_folder_path = Path(self.data_folder_path)
@@ -92,7 +92,7 @@ class FoodYamlRepo:
 class ConsumptionYamlRepo:
 
     def __init__(self, data_folder_path: str):
-        self.data_folder_path = data_folder_path
+        self.data_folder_path = data_folder_path + "/consumption"
 
     def _get_yaml_files(self) -> list[Path]:
         data_folder_path = Path(self.data_folder_path)
