@@ -7,6 +7,7 @@ from thefuzz import fuzz
 
 from crud.models import Food
 from crud.models import Consumption
+
 T = t.TypeVar("T")
 
 
@@ -24,7 +25,7 @@ class NutritionRepo(t.Protocol[T]):
     def modify(self, entity: T):
         ...
 
-    def delete(self, entity: T):
+    def delete(self, entity_name: str):
         ...
 
 
@@ -60,13 +61,14 @@ class FoodYamlRepo:
                 return Food(**food_dict)
         return None
 
-    def get_all(self) -> list[Food]:
+    def get_all(self, **filter) -> list[Food]:
         foods = []
         all_yaml_files = self._get_yaml_files()
         for file in all_yaml_files:
             with open(file, "r") as f:
                 food_dict = yaml.safe_load(f)
-                foods.append(Food(**food_dict))
+                if all([food_dict[k] == v for k, v in filter.items()]):
+                    foods.append(Food(**food_dict))
         return foods
 
     def add(self, foods: list[Food]):
@@ -79,13 +81,13 @@ class FoodYamlRepo:
                 yaml.safe_dump(food.dict(), f)
 
     def modify(self, food: Food):
-        self.delete(food)
+        self.delete(food.name)
         self.add([food])
 
-    def delete(self, food: Food):
-        file_path = self._get_yaml_file_by_name(food.name)
+    def delete(self, food_name: str):
+        file_path = self._get_yaml_file_by_name(food_name)
         if file_path is None:
-            raise ValueError(f"{food.name} doesn't exist")
+            raise ValueError(f"{food_name} doesn't exist")
         os.remove(file_path)
 
 
@@ -133,11 +135,11 @@ class ConsumptionYamlRepo:
                 yaml.safe_dump(consumption.dict(), f)
 
     def modify(self, consumption: Consumption):
-        self.delete(consumption)
+        self.delete(consumption.name)
         self.add([consumption])
 
-    def delete(self, consumption: Consumption):
-        file_path = self._get_yaml_file_by_name(consumption.name)
+    def delete(self, username: str):
+        file_path = self._get_yaml_file_by_name(username)
         if file_path is None:
-            raise ValueError(f"{consumption.name} doesn't exist")
+            raise ValueError(f"{username} doesn't exist")
         os.remove(file_path)
