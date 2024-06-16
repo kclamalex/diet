@@ -18,7 +18,7 @@ def print_food_list(food_list: list[models.Food]):
     print(tabulate(table, headers=headers))
 
 
-def print_day_plan(diet_plan: models.DietPlan):
+def print_day_plan(diet_plan: models.DailyDietPlan):
     pass
 
 

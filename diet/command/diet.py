@@ -1,6 +1,6 @@
 import click
 
-from crud.repo import FoodYamlRepo, ConsumptionYamlRepo
+from crud.repo import FoodYamlRepo, UserYamlRepo
 from component.calculation import get_meal_portion_per_day_in_gram
 from component.combination import pick_k_unique_food_combinations
 
@@ -12,9 +12,9 @@ END = "Press enter again to end this prompt"
 @click.pass_context
 def plan(ctx):
     food_list = []
-    consumption_list = []
+    user_list = []
     food_repo = FoodYamlRepo(ctx.obj["data_folder_path"])
-    consumption_repo = ConsumptionYamlRepo(ctx.obj["data_folder_path"])
+    user_repo = UserYamlRepo(ctx.obj["data_folder_path"])
 
     # all_food = food_repo.get_all()
     # while food_name := click.prompt(
@@ -33,23 +33,23 @@ def plan(ctx):
     all_vegs= food_repo.get_all(**{"food_type": "vegs"})
     food_comb = pick_k_unique_food_combinations(all_proteins, all_carbs, all_vegs, 2)
 
-    # all_consumptions = consumption_repo.get_all()
+    # all_users = user_repo.get_all()
     # while user_name := click.prompt(
     #         "Please enter user you would like to use to generate the plan",
     #         default=END):
     #     if user_name == END:
     #         break
-    #     if user_name not in [u.name for u in all_consumptions]:
+    #     if user_name not in [u.name for u in all_users]:
     #         print(f"{user_name} nutrition info doesn't exist")
     #         continue
-    #     consumption = consumption_repo.get(user_name)
-    #     consumption_list.append(consumption)
+    #     user = user_repo.get(user_name)
+    #     user_list.append(user)
     #
-    # if not food_list or not consumption_list:
+    # if not food_list or not user_list:
     #     print(
     #         "You didn't enter food or user to generate diet plan. Please try to enter them again"
     #     )
     #     return
     #
-    # result = get_meal_portion_per_day_in_gram(food_list, consumption_list)
+    # result = get_meal_portion_per_day_in_gram(food_list, user_list)
     # print(result)

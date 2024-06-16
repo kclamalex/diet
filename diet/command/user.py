@@ -1,13 +1,13 @@
 import click
 
-from crud.repo import ConsumptionYamlRepo
-from crud.models import Consumption
+from crud.repo import UserYamlRepo
+from crud.models import User
 
 
 @click.group()
 @click.pass_context
 def user(ctx):
-    ctx.obj["user_repo"] = ConsumptionYamlRepo(ctx.obj["data_folder_path"])
+    ctx.obj["user_repo"] = UserYamlRepo(ctx.obj["data_folder_path"])
 
 
 @click.command()
@@ -19,7 +19,7 @@ def user(ctx):
 @click.pass_context
 def add(ctx, name, carb, fat, protein, calories):
     ctx.obj["user_repo"].add([
-        Consumption(
+        User(
             name=name,
             protein_percentage=protein,
             carbohydrate_percentage=carb,
@@ -44,7 +44,7 @@ def list_(ctx):
 @click.pass_context
 def update(ctx, name, carb, fat, protein, calories):
     ctx.obj["user_repo"].update([
-        Consumption(
+        User(
             name=name,
             protein_percentage=protein,
             carbohydrate_percentage=carb,

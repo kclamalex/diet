@@ -6,7 +6,7 @@ import yaml
 from thefuzz import fuzz
 
 from crud.models import Food
-from crud.models import Consumption
+from crud.models import User
 
 T = t.TypeVar("T")
 
@@ -33,7 +33,7 @@ class FoodRepo(NutritionRepo):
     ...
 
 
-class ConsumptionRepo(NutritionRepo):
+class UserRepo(NutritionRepo):
     ...
 
 
@@ -91,10 +91,10 @@ class FoodYamlRepo:
         os.remove(file_path)
 
 
-class ConsumptionYamlRepo:
+class UserYamlRepo:
 
     def __init__(self, data_folder_path: str):
-        self.data_folder_path = data_folder_path + "/consumption"
+        self.data_folder_path = data_folder_path + "/user"
 
     def _get_yaml_files(self) -> list[Path]:
         data_folder_path = Path(self.data_folder_path)
@@ -103,40 +103,40 @@ class ConsumptionYamlRepo:
     def _get_yaml_file_by_name(self, name_to_search: str) -> Path | None:
         all_yaml_filepaths = self._get_yaml_files()
         for filepath in all_yaml_filepaths:
-            consumption_name = filepath.stem
-            if fuzz.ratio(name_to_search, consumption_name) >= 80:
+            user_name = filepath.stem
+            if fuzz.ratio(name_to_search, user_name) >= 80:
                 return filepath
         return None
 
-    def get(self, name: str) -> Consumption | None:
+    def get(self, name: str) -> User | None:
         if file_path := self._get_yaml_file_by_name(name):
             with open(file_path, 'r') as f:
-                consumption_dict = yaml.safe_load(f)
-                return Consumption(**consumption_dict)
+                user_dict = yaml.safe_load(f)
+                return User(**user_dict)
         return None
 
-    def get_all(self) -> list[Consumption]:
-        consumptions = []
+    def get_all(self) -> list[User]:
+        users = []
         all_yaml_files = self._get_yaml_files()
         for file in all_yaml_files:
             with open(file, "r") as f:
-                consumption_dict = yaml.safe_load(f)
-                consumptions.append(Consumption(**consumption_dict))
-        return consumptions
+                user_dict = yaml.safe_load(f)
+                users.append(User(**user_dict))
+        return users
 
-    def add(self, consumptions: list[Consumption]):
-        for consumption in consumptions:
+    def add(self, users: list[User]):
+        for user in users:
             file_path = Path(
-                f"{self.data_folder_path}/{consumption.name}.yaml")
+                f"{self.data_folder_path}/{user.name}.yaml")
             if file_path.exists():
                 print(f"{file_path} already existed")
                 continue
             with open(file_path, "w+") as f:
-                yaml.safe_dump(consumption.dict(), f)
+                yaml.safe_dump(user.dict(), f)
 
-    def modify(self, consumption: Consumption):
-        self.delete(consumption.name)
-        self.add([consumption])
+    def modify(self, user: User):
+        self.delete(user.name)
+        self.add([user])
 
     def delete(self, username: str):
         file_path = self._get_yaml_file_by_name(username)

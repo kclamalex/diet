@@ -62,12 +62,12 @@ class Vegs(Food):
         super().__init__(**data, )
 
 
-class Consumption(NutritionBase):
+class User(NutritionBase):
     name: str
 
 
-class DietPlan(_Base):
-    user: Consumption
+class DailyDietPlan(_Base):
+    user: User
     meal_portion_per_day: dict[str, float]
 
     def get_meal_portion_per_meal(self, num_of_meal: int) -> dict[str, float]:

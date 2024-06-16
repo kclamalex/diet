@@ -7,15 +7,15 @@ from crud import models
 
 def get_meal_portion_per_day_in_gram(
         food_list: list[models.Food],
-        consumption_list: list[models.Consumption]
-) -> dict[str, models.DietPlan]:
+        user_list: list[models.User]
+) -> dict[str, models.DailyDietPlan]:
 
     meal_portion_per_day_by_user = {}
     foods_matrix = np.array([f.get_nutrition_info_tuple() for f in food_list])
 
     foods_transposed_matrix = np.vstack([foods_matrix]).T
 
-    for user in consumption_list:
+    for user in user_list:
         grams_needed_per_day = nnls(foods_transposed_matrix,
                                     user.get_nutrition_info_tuple())[0]
         meal_portion_per_day = {
@@ -23,7 +23,7 @@ def get_meal_portion_per_day_in_gram(
             for food, g_per_day in zip(food_list, grams_needed_per_day)
         }
 
-        meal_portion_per_day_by_user[user.name] = models.DietPlan(
+        meal_portion_per_day_by_user[user.name] = models.DailyDietPlan(
             user=user, meal_portion_per_day=meal_portion_per_day)
 
     return meal_portion_per_day_by_user
