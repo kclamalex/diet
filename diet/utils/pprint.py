@@ -1,20 +1,33 @@
+from crud import models
 from tabulate import tabulate
 
-from crud import models
+__all__ = [
+    "print_food_list",
+]
 
 
 def print_food_list(food_list: list[models.Food]):
     table = []
     headers = [
-        "name", "type", "protein per 1 g", "carbs per 1 g", "fat per 1 g",
-        "calories per 1 g"
+        "name",
+        "type",
+        "protein per 1 g",
+        "carbs per 1 g",
+        "fat per 1 g",
+        "calories per 1 g",
     ]
 
     for f in food_list:
-        table.append([
-            f.name, f.food_type, f.protein_percentage,
-            f.carbohydrate_percentage, f.fat_percentage, f.calories_per_g
-        ])
+        table.append(
+            [
+                f.name,
+                f.food_type,
+                f.protein_percentage,
+                f.carbohydrate_percentage,
+                f.fat_percentage,
+                f.calories_per_g,
+            ]
+        )
     print(tabulate(table, headers=headers))
 
 

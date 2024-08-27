@@ -1,6 +1,8 @@
+import random
 import typing as t
 from itertools import product
-import random
+
+__all__ = ["unique_choice", "pick_k_unique_food_combinations"]
 
 
 def unique_choice(elements: list[t.Any], k: int) -> list:
@@ -16,8 +18,9 @@ def unique_choice(elements: list[t.Any], k: int) -> list:
     return choices
 
 
-def pick_k_unique_food_combinations(proteins: list, carbs: list, vegs: list,
-                                    k: int) -> list:
+def pick_k_unique_food_combinations(
+    proteins: list, carbs: list, vegs: list, k: int
+) -> list:
     args = [proteins, carbs, vegs]
     args = list(filter(lambda x: len(x) > 0, args))
     combinations = list(product(*args))
