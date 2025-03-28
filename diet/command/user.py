@@ -4,7 +4,7 @@ import click
 from tabulate import tabulate
 
 from diet.crud import models
-from diet.crud.repo import UserYamlRepo
+from diet.crud.repo import UserSqliteRepo
 from diet.utils import str_to_snake_case
 
 
@@ -16,16 +16,17 @@ def user(ctx):
 
 @click.command()
 @click.option("--name", prompt="User name")
-@click.option("--carb", prompt="Carbs required per day")
-@click.option("--fat", prompt="Fat required per day")
-@click.option("--protein", prompt="Protein required per day")
-@click.option("--calories", prompt="Calories required per day")
+@click.option("--protein", prompt="Required protein per day")
+@click.option("--carb", prompt="Required carbs per day")
+@click.option("--fat", prompt="Required fat per day")
+@click.option("--calories", prompt="Required calories per day")
 @click.pass_context
-def add(ctx, name, carb, fat, protein, calories):
-    user_repo = UserYamlRepo(ctx.obj["data_folder_path"])
+def add(ctx, name, protein, carb, fat, calories):
+    user_repo = UserSqliteRepo(ctx.obj["db_path"])
     name = str_to_snake_case(name)
     user_repo.add(
         models.User(
+            id=str(uuid4()),
             name=name,
             required_protein_per_day=protein,
             required_carbs_per_day=carb,
@@ -38,7 +39,7 @@ def add(ctx, name, carb, fat, protein, calories):
 @click.command()
 @click.pass_context
 def list_(ctx):
-    user_repo = UserYamlRepo(ctx.obj["data_folder_path"])
+    user_repo = UserSqliteRepo(ctx.obj["db_path"])
     user_list: list[models.User] = user_repo.get_all()
     table = []
     headers = [
@@ -64,15 +65,20 @@ def list_(ctx):
 
 @click.command()
 @click.option("--name", prompt="User name to update")
+@click.option("--protein", prompt="New required protein per day")
 @click.option("--carb", prompt="New required carbs per day")
 @click.option("--fat", prompt="New required fat per day")
-@click.option("--protein", prompt="New required protein per day")
 @click.option("--calories", prompt="New required calories per day")
 @click.pass_context
-def update(ctx, name, carb, fat, protein, calories):
-    user_repo = UserYamlRepo(ctx.obj["data_folder_path"])
+def update(ctx, name, protein, carb, fat, calories):
+    user_repo = UserSqliteRepo(ctx.obj["db_path"])
+    existing_user = user_repo.get_by_name(name)
+    if not existing_user:
+        raise ValueError(f"User with name {name} not found")
+        
     user_repo.modify(
         models.User(
+            id=existing_user.id,  # Preserve the existing ID
             name=name,
             required_protein_per_day=protein,
             required_carbs_per_day=carb,
@@ -86,8 +92,8 @@ def update(ctx, name, carb, fat, protein, calories):
 @click.option("--name", prompt="User name to delete")
 @click.pass_context
 def delete(ctx, name):
-    user_repo = UserYamlRepo(ctx.obj["data_folder_path"])
-    user_repo.delete(name)
+    user_repo = UserSqliteRepo(ctx.obj["db_path"])
+    user_repo.delete_by_name(name)
 
 
 user.add_command(add, "add")

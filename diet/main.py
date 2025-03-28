@@ -1,3 +1,4 @@
+import os
 import click
 
 from diet.command import food, plan, shop, user
@@ -7,7 +8,11 @@ from diet.command import food, plan, shop, user
 @click.pass_context
 def cli(ctx):
     ctx.obj = {}
-    ctx.obj["data_folder_path"] = "./data"
+    # Create data directory if it doesn't exist
+    data_dir = "./data"
+    os.makedirs(data_dir, exist_ok=True)
+    
+    ctx.obj["db_path"] = os.path.join(data_dir, "diet.db")
 
 
 cli.add_command(food)

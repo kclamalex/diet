@@ -1,11 +1,11 @@
-from collections import defaultdict
+from uuid import uuid4
 
 import click
 from tabulate import tabulate
 
 from diet.crud import models
-from diet.crud.repo import PlanYamlRepo, ShoppingListYamlRepo
-from diet.utils.prompt import collect_entities_from_user_input_until_the_end
+from diet.crud.repo import ShoppingListSqliteRepo, PlanSqliteRepo
+from diet.utils import str_to_snake_case
 
 
 @click.group()
@@ -15,46 +15,49 @@ def shop(ctx):
 
 
 @click.command()
+@click.option("--name", prompt="Shopping list name")
+@click.option("--plans", prompt="Plan IDs (comma separated)")
 @click.pass_context
-def add(ctx):
-    diet_plan_repo = PlanYamlRepo(ctx.obj["data_folder_path"])
-    shopping_list_repo = ShoppingListYamlRepo(ctx.obj["data_folder_path"])
-    plan_list = collect_entities_from_user_input_until_the_end(
-        "Please enter plan you would like to add to generate the shopping list",
-        diet_plan_repo.get_by_name,
+def add(ctx, name, plans):
+    shopping_list_repo = ShoppingListSqliteRepo(ctx.obj["db_path"])
+    plan_repo = PlanSqliteRepo(ctx.obj["db_path"])
+    name = str_to_snake_case(name)
+    
+    # Parse plan IDs
+    plan_ids = [pid.strip() for pid in plans.split(",")]
+    
+    # Validate plans exist
+    shopping_list = {}
+    for plan_id in plan_ids:
+        plan = plan_repo.get_by_id(plan_id)
+        if not plan:
+            raise ValueError(f"Plan with ID {plan_id} not found")
+        # Merge plan portions into shopping list
+        for food, amount in plan.meal_portion_per_day.items():
+            shopping_list[food] = shopping_list.get(food, 0) + amount * plan.days
+    
+    shopping_list_repo.add(
+        models.ShoppingList(
+            id=str(uuid4()),
+            name=name,
+            diet_plan_ids=plan_ids,
+            shopping_list=shopping_list,
+        )
     )
-
-    shopping_list_dict = defaultdict(float)
-    plan_ids = []
-    for plan in plan_list:
-        plan_ids.append(plan.id)
-        for food_name, gram in plan.meal_portion_per_day.items():
-            shopping_list_dict[food_name] += gram
-
-    shopping_list = models.ShoppingList(
-        diet_plan_ids=plan_ids, shopping_list=shopping_list_dict
-    )
-    shopping_list_repo.add(shopping_list)
 
 
 @click.command()
 @click.pass_context
 def list_(ctx):
-    shopping_list_repo = ShoppingListYamlRepo(ctx.obj["data_folder_path"])
-    shopping_lists = shopping_list_repo.get_all()
+    shopping_list_repo = ShoppingListSqliteRepo(ctx.obj["db_path"])
+    shopping_lists: list[models.ShoppingList] = shopping_list_repo.get_all()
     table = []
-    headers = [
-        "id",
-        "created at",
-        "diet plan ids",
-        "shopping list",
-    ]
+    headers = ["name", "plan IDs", "shopping list"]
 
     for sl in shopping_lists:
         table.append(
             [
-                sl.id,
-                sl.created_at,
+                sl.name,
                 sl.diet_plan_ids,
                 sl.shopping_list,
             ]
@@ -62,5 +65,50 @@ def list_(ctx):
     print(tabulate(table, headers=headers))
 
 
+@click.command()
+@click.option("--name", prompt="Shopping list name to update")
+@click.option("--plans", prompt="New plan IDs (comma separated)")
+@click.pass_context
+def update(ctx, name, plans):
+    shopping_list_repo = ShoppingListSqliteRepo(ctx.obj["db_path"])
+    plan_repo = PlanSqliteRepo(ctx.obj["db_path"])
+    
+    existing_list = shopping_list_repo.get_by_name(name)
+    if not existing_list:
+        raise ValueError(f"Shopping list with name {name} not found")
+    
+    # Parse plan IDs
+    plan_ids = [pid.strip() for pid in plans.split(",")]
+    
+    # Validate plans exist and calculate new shopping list
+    shopping_list = {}
+    for plan_id in plan_ids:
+        plan = plan_repo.get_by_id(plan_id)
+        if not plan:
+            raise ValueError(f"Plan with ID {plan_id} not found")
+        # Merge plan portions into shopping list
+        for food, amount in plan.meal_portion_per_day.items():
+            shopping_list[food] = shopping_list.get(food, 0) + amount * plan.days
+    
+    shopping_list_repo.modify(
+        models.ShoppingList(
+            id=existing_list.id,  # Preserve the existing ID
+            name=name,
+            diet_plan_ids=plan_ids,
+            shopping_list=shopping_list,
+        )
+    )
+
+
+@click.command()
+@click.option("--name", prompt="Shopping list name to delete")
+@click.pass_context
+def delete(ctx, name):
+    shopping_list_repo = ShoppingListSqliteRepo(ctx.obj["db_path"])
+    shopping_list_repo.delete_by_name(name)
+
+
 shop.add_command(add, "add")
 shop.add_command(list_, "list")
+shop.add_command(update, "update")
+shop.add_command(delete, "delete")

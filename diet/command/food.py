@@ -5,7 +5,7 @@ from tabulate import tabulate
 
 from diet.crud import models
 from diet.crud.models import Carbs, FoodTypeEnum, Protein, Vegs
-from diet.crud.repo import FoodYamlRepo
+from diet.crud.repo import FoodSqliteRepo
 from diet.utils import str_to_snake_case
 
 
@@ -28,7 +28,7 @@ def food(ctx):
 @click.option("--calories", prompt="Calories per gram")
 @click.pass_context
 def add(ctx, name, ftype, carb, fat, protein, calories):
-    food_repo = FoodYamlRepo(ctx.obj["data_folder_path"])
+    food_repo = FoodSqliteRepo(ctx.obj["db_path"])
     name = str_to_snake_case(name)
     match ftype:
         case FoodTypeEnum.PROTEIN:
@@ -54,7 +54,7 @@ def add(ctx, name, ftype, carb, fat, protein, calories):
 @click.command()
 @click.pass_context
 def list_(ctx):
-    food_repo = FoodYamlRepo(ctx.obj["data_folder_path"])
+    food_repo = FoodSqliteRepo(ctx.obj["db_path"])
     food_list: list[models.Food] = food_repo.get_all()
     table = []
     headers = [
@@ -93,7 +93,12 @@ def list_(ctx):
 @click.option("--calories", prompt="New calories per gram")
 @click.pass_context
 def update(ctx, name, ftype, carb, fat, protein, calories):
-    food_repo = FoodYamlRepo(ctx.obj["data_folder_path"])
+    food_repo = FoodSqliteRepo(ctx.obj["db_path"])
+    # First get the existing food to preserve its ID
+    existing_food = food_repo.get_by_name(name)
+    if not existing_food:
+        raise ValueError(f"Food with name {name} not found")
+        
     match ftype:
         case FoodTypeEnum.PROTEIN:
             food_class = Protein
@@ -103,8 +108,10 @@ def update(ctx, name, ftype, carb, fat, protein, calories):
             food_class = Vegs
         case _:
             raise ValueError("Invalid food type")
+    
     food_repo.modify(
         food_class(
+            id=existing_food.id,  # Preserve the existing ID
             name=name,
             protein_per_gram=protein,
             carbs_per_gram=carb,
@@ -118,8 +125,8 @@ def update(ctx, name, ftype, carb, fat, protein, calories):
 @click.option("--name", prompt="Food name to delete")
 @click.pass_context
 def delete(ctx, name):
-    food_repo = FoodYamlRepo(ctx.obj["data_folder_path"])
-    food_repo.delete(name)
+    food_repo = FoodSqliteRepo(ctx.obj["db_path"])
+    food_repo.delete_by_name(name)
 
 
 food.add_command(add, "add")
